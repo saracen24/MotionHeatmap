@@ -1,0 +1,10 @@
+{
+  "camera": {
+    "source": "/path/to/video.ext",
+    "capture_delay_ms": 1
+  },
+  "processor": {
+    "segments_rgb": [ 0.0, 1.0, 0.0 ],
+    "show_gui": true
+  }
+}

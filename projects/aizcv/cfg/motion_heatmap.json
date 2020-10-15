@@ -1,0 +1,26 @@
+{
+  "ocv_threads": -1,
+  "preprocessor": {
+    "white_balance": false,
+    "blur": 1.5,
+    "convert_to_gray": false,
+    "spatial_scale": 1.0
+  },
+  "bg_subtractor": {
+    "backend_types": [ "MOG2", "KNN" ],
+    "backend": "KNN",
+    "history": 1000,
+    "distance_threshold": 50.0,
+    "detect_shadows": true,
+    "remove_shadows": false,
+    "gain_shadows": true,
+    "learning_rate": -1.0,
+    "blur_output": 0.2
+  },
+  "accumulator": {
+    "half_precision": true,
+    "alpha": 0.98,
+    "beta": 1.0,
+    "gamma": 0.0
+  }
+}

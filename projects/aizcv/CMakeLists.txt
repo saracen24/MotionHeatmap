@@ -1,0 +1,189 @@
+# ---[ Project.
+project (aizcv
+  VERSION 0.1.0.0
+  DESCRIPTION "Aiz computer vision library."
+  LANGUAGES CXX
+)
+
+# ---[ Modules.
+include (GNUInstallDirs)
+
+# ---[ Target.
+add_library (${PROJECT_NAME})
+add_library (${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+# ---[ Compile definitions.
+string (TIMESTAMP BUILD_TIMESTAMP)
+target_compile_definitions (${PROJECT_NAME}
+  PRIVATE
+    PROJECT_NAME="${PROJECT_NAME}"
+    PROJECT_DESCRIPTION="${PROJECT_DESCRIPTION}"
+    PROJECT_VERSION="${PROJECT_VERSION}"
+    BUILD_TIMESTAMP="${BUILD_TIMESTAMP}"
+)
+
+if (BUILD_SHARED_LIBS)
+  target_compile_definitions (${PROJECT_NAME}
+    PUBLIC
+      $<BUILD_INTERFACE:AIZCV_DSO>
+      $<INSTALL_INTERFACE:AIZCV_DSO>
+    PRIVATE
+      AIZCV_DSO_EXPORT
+  )
+endif ()
+
+# ---[ Dependencies.
+# OpenCV
+find_package (OpenCV 4 REQUIRED
+  COMPONENTS
+    highgui
+    xphoto
+    bgsegm
+)
+
+# ---[ Include directories.
+target_include_directories (${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${OpenCV_INCLUDE_DIRS}"
+)
+
+# ---[ Link libraries.
+target_link_libraries (${PROJECT_NAME}
+  PUBLIC
+    ${OpenCV_LIBS}
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:stdc++fs>
+    CONAN_PKG::nlohmann_json
+)
+
+# ---[ Compile features.
+target_compile_features (${PROJECT_NAME}
+  INTERFACE
+    cxx_std_11
+)
+
+# ---[ Compile options.
+target_compile_options (${PROJECT_NAME}
+  PRIVATE
+    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:
+      -Wall
+      -Wextra
+      -Wpedantic
+      -pedantic-errors
+    >
+    $<$<CXX_COMPILER_ID:MSVC>:
+      /Wall
+      /EHsc
+      /MP
+    >
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:
+      /Zi
+      /MDd
+    >
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:
+      /MD
+    >
+)
+
+# ---[ Sources.
+set (API_FILES
+  "./include/aizcv/visibility.hpp"
+  "./include/aizcv/cvision/motion_heatmap.hpp"
+)
+
+set (SOURCE_FILES
+  ${API_FILES}
+  "./cfg/motion_heatmap.json"
+  "./src/cvision/motion_heatmap/motion_heatmap.cpp"
+  "./src/cvision/motion_heatmap/motion_heatmap_cfg.cpp"
+  "./src/cvision/motion_heatmap/motion_heatmap_cfg.hpp"
+)
+
+source_group (TREE "${CMAKE_CURRENT_SOURCE_DIR}"
+  FILES
+    ${SOURCE_FILES}
+)
+
+target_sources (${PROJECT_NAME}
+  PRIVATE
+    ${SOURCE_FILES}
+)
+
+# ---[ Target properties.
+set_target_properties (${PROJECT_NAME}
+  PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+    LINKER_LANGUAGE CXX
+    PUBLIC_HEADER "${API_FILES}"
+    CXX_VISIBILITY_PRESET "hidden"
+    LINK_WHAT_YOU_USE ON
+    POSITION_INDEPENDENT_CODE ON
+    ENABLE_EXPORTS ${BUILD_SHARED_LIBS}
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+    VISIBILITY_INLINES_HIDDEN ON
+    DEBUG_POSTFIX "d"
+    VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+    USE_FOLDERS ON
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}"
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}"
+    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+)
+
+# ---[ Install rules.
+include (InstallRequiredSystemLibraries)
+install (TARGETS ${PROJECT_NAME}
+  EXPORT "${PROJECT_NAME}-targets"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
+# Public headers with subdirectories.
+install (DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+
+include (CMakePackageConfigHelpers)
+configure_package_config_file ("cmake/${PROJECT_NAME}-config.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+write_basic_package_version_file ("${PROJECT_NAME}-config-version.cmake"
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY AnyNewerVersion
+)
+
+export (TARGETS ${PROJECT_NAME}
+  NAMESPACE ${PROJECT_NAME}::
+  FILE "${PROJECT_NAME}-targets.cmake"
+)
+export (PACKAGE ${PROJECT_NAME})
+
+install (FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+)
+install (EXPORT "${PROJECT_NAME}-targets"
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+)
